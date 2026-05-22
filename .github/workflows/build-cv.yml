@@ -38,6 +38,9 @@ jobs:
           # Remove everything from the git index and working directory
           git rm -rf .
           
+          # Remove any untracked pdf or log files that might be owned by root
+          sudo rm -f main.pdf main.aux main.log main.out
+          
           # Copy only the compiled PDF from temp directory
           cp /tmp/cv_release/main.pdf .
           
