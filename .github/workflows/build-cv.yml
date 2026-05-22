@@ -31,32 +31,28 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git checkout --orphan release
-          # Remove all files and folders except .git
-          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
+          
+          # Create/checkout an orphan release branch (no history)
+          git checkout --orphan temp_release
+          
+          # Remove everything from the git index and working directory
+          git rm -rf .
+          
+          # Copy only the compiled PDF from temp directory
           cp /tmp/cv_release/main.pdf .
+          
+          # Add and commit only the PDF file
           git add main.pdf
           git commit -m "Update CV PDF"
-          git push -f origin release
+          
+          # Force push to release branch
+          git push -f origin temp_release:release
 
       - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
-          body: "Automated CV PDF build."
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./main.pdf
-          asset_name: main.pdf
-          asset_content_type: application/pdf 
+        run: |
+          gh release create "v${{ github.run_number }}" \
+            --title "Release v${{ github.run_number }}" \
+            --notes "Automated CV PDF build." \
+            "./main.pdf" 
